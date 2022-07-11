@@ -31,6 +31,9 @@ enum Commands {
     Commit {
         #[clap(value_parser)]
         message: Vec<String>,
+
+        #[clap(short, long)]
+        ammend: bool,
     },
 }
 
@@ -41,7 +44,7 @@ fn main() {
         Commands::Init {} => println!("git init"),
         Commands::Stage { paths } => stageFiles(paths),
         Commands::Unstage { paths } => unstageFiles(paths),
-        Commands::Commit { message } => commit(message),
+        Commands::Commit { message, ammend } => commit(message, ammend),
     }
 }
 
@@ -63,13 +66,17 @@ fn unstageFiles(paths: &Vec<String>) -> () {
     };
 }
 
-fn commit(message: &Vec<String>) -> () {
-    let result = exec(
-        Command::new("git")
-            .arg("commit")
-            .arg("-m")
-            .arg(format!("\"{}\"", message.join(" "))),
-    );
+fn commit(message: &Vec<String>, ammend: &bool) -> () {
+    let mut cmd = Command::new("git");
+    cmd.arg("commit")
+        .arg("-m")
+        .arg(format!("\"{}\"", message.join(" ")));
+
+    if *ammend {
+        cmd.arg("--amend");
+    }
+
+    let result = exec(&mut cmd);
 
     match result {
         Ok(output) => println!("{}", output),
