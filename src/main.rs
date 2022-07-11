@@ -35,6 +35,14 @@ enum Commands {
         #[clap(short, long)]
         ammend: bool,
     },
+    #[clap(about = "Links this repository to a remote repository")]
+    Link {
+        #[clap(value_parser)]
+        remoteUrl: String,
+
+        #[clap(value_parser)]
+        name: Option<String>,
+    },
 }
 
 fn main() {
@@ -45,6 +53,7 @@ fn main() {
         Commands::Stage { paths } => stageFiles(paths),
         Commands::Unstage { paths } => unstageFiles(paths),
         Commands::Commit { message, ammend } => commit(message, ammend),
+        Commands::Link { remoteUrl, name } => link(remoteUrl, name),
     }
 }
 
@@ -68,6 +77,7 @@ fn unstageFiles(paths: &Vec<String>) -> () {
 
 fn commit(message: &Vec<String>, ammend: &bool) -> () {
     let mut cmd = Command::new("git");
+
     cmd.arg("commit")
         .arg("-m")
         .arg(format!("\"{}\"", message.join(" ")));
@@ -75,6 +85,22 @@ fn commit(message: &Vec<String>, ammend: &bool) -> () {
     if *ammend {
         cmd.arg("--amend");
     }
+
+    let result = exec(&mut cmd);
+
+    match result {
+        Ok(output) => println!("{}", output),
+        Err(error) => eprintln!("{}", error.bg_red()),
+    };
+}
+
+fn link(remote: &String, name: &Option<String>) -> () {
+    let mut cmd = Command::new("git");
+
+    cmd.arg("remote")
+        .arg("add")
+        .arg(name.as_ref().unwrap_or(&String::from("origin")))
+        .arg(remote);
 
     let result = exec(&mut cmd);
 
