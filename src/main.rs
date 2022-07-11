@@ -78,16 +78,16 @@ fn commit(message: &Vec<String>) -> () {
 }
 
 fn exec(command: &mut Command) -> Result<String, String> {
-    let result = command.output();
+    let result = command.output().unwrap_or_else(|err| {
+        panic!("{}", err.to_string());
+    });
 
-    return match result {
-        Ok(res) => match res.status.success() {
-            true => Ok(match res.stdout.is_empty() {
-                true => String::from(""),
-                false => String::from_utf8_lossy(&res.stdout.split_last().unwrap().1).to_string(),
-            }),
-            false => Err(String::from_utf8_lossy(&res.stderr.split_last().unwrap().1).to_string()),
-        },
-        Err(error) => Err(error.to_string()),
-    };
+    if result.status.success() {
+        return Ok(match result.stdout.is_empty() {
+            true => String::from(""),
+            false => String::from_utf8_lossy(&result.stdout.split_last().unwrap().1).to_string(),
+        });
+    } else {
+        return Err(String::from_utf8_lossy(&result.stderr.split_last().unwrap().1).to_string());
+    }
 }
