@@ -4,6 +4,8 @@ use std::process::Command;
 
 use clap::{Parser, Subcommand};
 
+use colorful::Colorful;
+
 #[derive(Parser, Debug)]
 #[clap(
     author = "Jason Xu",
@@ -51,8 +53,14 @@ fn main() {
 fn stageFiles(paths: &Vec<String>) -> () {
     let result = Command::new("git").arg("add").args(paths).output().unwrap();
 
-    println!("{}", String::from_utf8_lossy(&result.stdout));
-    println!("{}", String::from_utf8_lossy(&result.stderr));
+    if result.status.success() {
+        println!("{}", String::from_utf8_lossy(&result.stdout));
+    } else {
+        println!(
+            "{}",
+            String::from_utf8_lossy(&result.stderr.split_last().unwrap().1).bg_red()
+        );
+    }
 }
 
 fn unstageFiles(paths: &Vec<String>) -> () {
@@ -62,9 +70,14 @@ fn unstageFiles(paths: &Vec<String>) -> () {
         .output()
         .unwrap();
 
-    result.stdout.into_iter().for_each(|line| {
-        println!("{}", line);
-    });
+    if result.status.success() {
+        println!("{}", String::from_utf8_lossy(&result.stdout));
+    } else {
+        println!(
+            "{}",
+            String::from_utf8_lossy(&result.stderr.split_last().unwrap().1).bg_red()
+        );
+    }
 }
 
 fn commit(message: &Vec<String>) -> () {
@@ -75,6 +88,12 @@ fn commit(message: &Vec<String>) -> () {
         .output()
         .unwrap();
 
-    println!("{}", String::from_utf8_lossy(&result.stdout));
-    println!("{}", String::from_utf8_lossy(&result.stderr));
+    if result.status.success() {
+        println!("{}", String::from_utf8_lossy(&result.stdout));
+    } else {
+        println!(
+            "{}",
+            String::from_utf8_lossy(&result.stderr.split_last().unwrap().1).bg_red()
+        );
+    }
 }
