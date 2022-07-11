@@ -7,12 +7,7 @@ use clap::{Parser, Subcommand};
 use colorful::Colorful;
 
 #[derive(Parser, Debug)]
-#[clap(
-    author = "Jason Xu",
-    version,
-    propagate_version = true,
-    about = "A simple wrapper CLI for git"
-)]
+#[clap(author, version, propagate_version = true, about)]
 struct Args {
     #[clap(subcommand)]
     command: Commands,
@@ -22,17 +17,17 @@ struct Args {
 enum Commands {
     #[clap(about = "Initialize a new git repository")]
     Init {},
-    #[clap(about = "Stages the given files' changes", alias = "add")]
+    #[clap(about = "Stages the given files' changes (alias: add)", alias = "add")]
     Stage {
         #[clap(value_parser)]
         paths: Vec<String>,
     },
-    #[clap(about = "Unstages the given files' changes", aliases = &["remove", "rm"])]
+    #[clap(about = "Unstages the given files' changes (aliases: remove, rm)", aliases = &["remove", "rm"])]
     Unstage {
         #[clap(value_parser)]
         paths: Vec<String>,
     },
-    #[clap(about = "Commits the staged changes")]
+    #[clap(about = "Commits the staged changes (alias: save)", alias = "save")]
     Commit {
         #[clap(value_parser)]
         message: Vec<String>,
@@ -51,49 +46,48 @@ fn main() {
 }
 
 fn stageFiles(paths: &Vec<String>) -> () {
-    let result = Command::new("git").arg("add").args(paths).output().unwrap();
+    let result = exec(Command::new("git").arg("add").args(paths));
 
-    if result.status.success() {
-        println!("{}", String::from_utf8_lossy(&result.stdout));
-    } else {
-        println!(
-            "{}",
-            String::from_utf8_lossy(&result.stderr.split_last().unwrap().1).bg_red()
-        );
-    }
+    match result {
+        Ok(output) => println!("{}", output),
+        Err(error) => eprintln!("{}", error.bg_red()),
+    };
 }
 
 fn unstageFiles(paths: &Vec<String>) -> () {
-    let result = Command::new("git")
-        .arg("reset")
-        .args(paths)
-        .output()
-        .unwrap();
+    let result = exec(Command::new("git").arg("reset").args(paths));
 
-    if result.status.success() {
-        println!("{}", String::from_utf8_lossy(&result.stdout));
-    } else {
-        println!(
-            "{}",
-            String::from_utf8_lossy(&result.stderr.split_last().unwrap().1).bg_red()
-        );
-    }
+    match result {
+        Ok(output) => println!("{}", output),
+        Err(error) => eprintln!("{}", error.bg_red()),
+    };
 }
 
 fn commit(message: &Vec<String>) -> () {
-    let result = Command::new("git")
-        .arg("commit")
-        .arg("-m")
-        .arg(format!("\"{}\"", message.join(" ")))
-        .output()
-        .unwrap();
+    let result = exec(
+        Command::new("git")
+            .arg("commit")
+            .arg("-m")
+            .arg(format!("\"{}\"", message.join(" "))),
+    );
 
-    if result.status.success() {
-        println!("{}", String::from_utf8_lossy(&result.stdout));
-    } else {
-        println!(
-            "{}",
-            String::from_utf8_lossy(&result.stderr.split_last().unwrap().1).bg_red()
-        );
-    }
+    match result {
+        Ok(output) => println!("{}", output),
+        Err(error) => eprintln!("{}", error.bg_red()),
+    };
+}
+
+fn exec(command: &mut Command) -> Result<String, String> {
+    let result = command.output();
+
+    return match result {
+        Ok(res) => match res.status.success() {
+            true => Ok(match res.stdout.is_empty() {
+                true => String::from(""),
+                false => String::from_utf8_lossy(&res.stdout.split_last().unwrap().1).to_string(),
+            }),
+            false => Err(String::from_utf8_lossy(&res.stderr.split_last().unwrap().1).to_string()),
+        },
+        Err(error) => Err(error.to_string()),
+    };
 }

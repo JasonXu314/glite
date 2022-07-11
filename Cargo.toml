@@ -2,6 +2,8 @@
 name = "glite"
 version = "0.1.0"
 edition = "2021"
+authors = ["Jason Xu <Xinwen31415@gmail.com>"]
+description = "A simple wrapper CLI for git"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
