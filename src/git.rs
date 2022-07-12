@@ -199,7 +199,15 @@ impl Git {
         let result = exec(&mut cmd);
 
         match result {
-            Ok(output) => println!("{}", output),
+            Ok(_) => println!(
+                "Pushed to {}",
+                format!(
+                    "{}/{}",
+                    remoteName.as_ref().unwrap_or(&String::from("origin")),
+                    getCurrentBranchName().unwrap()
+                )
+                .green()
+            ),
             Err(error) => eprintln!("{}", error.bg_red()),
         };
     }
