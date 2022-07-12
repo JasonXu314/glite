@@ -218,6 +218,34 @@ impl Git {
         };
     }
 
+    pub fn branch(&self, name: &String, checkout: &bool) -> () {
+        let result = exec(
+            Command::new("git")
+                .arg("branch")
+                .arg(name.as_str())
+                .arg("-t"),
+        );
+
+        match result {
+            Ok(_) => {
+                println!("{} {}", "Created branch".green(), name.as_str().cyan());
+                if *checkout {
+                    self.checkout(name);
+                }
+            }
+            Err(error) => eprintln!("{}", error.bg_red()),
+        };
+    }
+
+    pub fn checkout(&self, name: &String) -> () {
+        let result = exec(Command::new("git").arg("checkout").arg(name.as_str()));
+
+        match result {
+            Ok(output) => println!("{}", output),
+            Err(error) => eprintln!("{}", error.bg_red()),
+        };
+    }
+
     fn getCurrentBranch(&self) -> Result<&Branch, String> {
         for branch in self.config.branches.as_slice() {
             if branch.current {
