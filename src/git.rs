@@ -246,6 +246,15 @@ impl Git {
         };
     }
 
+    pub fn pull(&self) -> () {
+        let result = exec(Command::new("git").arg("pull"));
+
+        match result {
+            Ok(output) => println!("{}", output),
+            Err(error) => eprintln!("{}", error.bg_red()),
+        };
+    }
+
     fn getCurrentBranch(&self) -> Result<&Branch, String> {
         for branch in self.config.branches.as_slice() {
             if branch.current {

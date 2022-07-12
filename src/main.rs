@@ -64,6 +64,8 @@ enum Commands {
         #[clap(value_parser)]
         name: String,
     },
+    #[clap(about = "Pulls changes from the remote branch to local")]
+    Pull {},
 }
 
 fn main() {
@@ -79,5 +81,6 @@ fn main() {
         Commands::Push { remoteName } => git.push(remoteName),
         Commands::Branch { name, checkout } => git.branch(name, checkout),
         Commands::Checkout { name } => git.checkout(name),
+        Commands::Pull {} => git.pull(),
     }
 }
