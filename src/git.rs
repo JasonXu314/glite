@@ -117,28 +117,33 @@ impl Git {
     }
 
     pub fn stageFiles(&self, paths: &Vec<String>) -> () {
+        let mut files: Vec<String> = Vec::new();
+
         if paths.len() == 0 {
             let result = getUnstagedFiles();
 
             match result {
-                Ok(files) => {
-                    let result = exec(Command::new("git").arg("add").args(files));
-
-                    match result {
-                        Ok(output) => println!("{}", output),
-                        Err(error) => eprintln!("{}", error.bg_red()),
-                    };
+                Ok(unstagedFiles) => {
+                    files = unstagedFiles;
                 }
                 Err(error) => eprintln!("{}", error.bg_red()),
             }
         } else {
-            let result = exec(Command::new("git").arg("add").args(paths));
-
-            match result {
-                Ok(output) => println!("{}", output),
-                Err(error) => eprintln!("{}", error.bg_red()),
-            };
+            files = paths.clone();
         }
+
+        let result = exec(Command::new("git").arg("add").args(files.as_slice()));
+
+        match result {
+            Ok(_) => {
+                println!("{}", "Staged files:".green());
+
+                for file in files.as_slice() {
+                    println!("\t{}", file.as_str().cyan());
+                }
+            }
+            Err(error) => eprintln!("{}", error.bg_red()),
+        };
     }
 
     pub fn unstageFiles(&self, paths: &Vec<String>) -> () {
@@ -207,7 +212,7 @@ impl Git {
                     remoteName.as_ref().unwrap_or(&String::from("origin")),
                     getCurrentBranchName().unwrap()
                 )
-                .blue()
+                .cyan()
             ),
             Err(error) => eprintln!("{}", error.bg_red()),
         };
@@ -231,6 +236,6 @@ fn getCurrentBranchName() -> Result<String, String> {
 fn getUnstagedFiles() -> Result<Vec<String>, String> {
     return Ok(exec(Command::new("git").arg("status").arg("--porcelain"))?
         .lines()
-        .map(|line| line.trim()[1..].trim().to_string())
+        .map(|line| line.trim()[2..].trim().to_string())
         .collect::<Vec<String>>());
 }
