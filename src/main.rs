@@ -5,7 +5,7 @@ mod utils;
 
 use clap::{Parser, Subcommand};
 
-use git::{commit, link, push, unstageFiles, Git};
+use git::Git;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, propagate_version = true, about)]
@@ -60,9 +60,9 @@ fn main() {
     match &args.command {
         Commands::Init {} => println!("git init"),
         Commands::Stage { paths } => git.stageFiles(paths),
-        Commands::Unstage { paths } => unstageFiles(paths),
-        Commands::Commit { message, ammend } => commit(message, ammend),
-        Commands::Link { remoteUrl, name } => link(remoteUrl, name),
-        Commands::Push { remoteName } => push(remoteName),
+        Commands::Unstage { paths } => git.unstageFiles(paths),
+        Commands::Commit { message, ammend } => git.commit(message, ammend),
+        Commands::Link { remoteUrl, name } => git.link(remoteUrl, name),
+        Commands::Push { remoteName } => git.push(remoteName),
     }
 }

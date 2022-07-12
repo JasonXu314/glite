@@ -8,17 +8,20 @@ use std::process::Command;
 
 use crate::utils::exec;
 
+#[derive(Debug)]
 pub struct Remote {
     pub name: String,
     pub url: String,
 }
 
+#[derive(Debug)]
 pub struct Branch {
     pub name: String,
     pub remote: Option<String>,
     pub current: bool,
 }
 
+#[derive(Debug)]
 pub struct Config {
     remotes: Vec<Remote>,
     branches: Vec<Branch>,
@@ -27,8 +30,8 @@ pub struct Config {
 impl Config {
     pub fn parse(configStr: &String) -> Config {
         lazy_static! {
-            static ref REMOTE_REGEX: Regex = Regex::new("^\\[remote \"(.+)\\]$").unwrap();
-            static ref BRANCH_REGEX: Regex = Regex::new("^\\[branch \"(.+)\\]$").unwrap();
+            static ref REMOTE_REGEX: Regex = Regex::new("^\\[remote \"(.+)\"\\]$").unwrap();
+            static ref BRANCH_REGEX: Regex = Regex::new("^\\[branch \"(.+)\"\\]$").unwrap();
             static ref KEY_VALUE_REGEX: Regex = Regex::new("^(.+)\\s*=\\s*(.+)$").unwrap();
         }
 
@@ -73,12 +76,12 @@ impl Config {
                 currBranch = Some(Branch {
                     name,
                     remote: None,
-                    current: branchName == getCurrentBranch().unwrap(),
+                    current: branchName == getCurrentBranchName().unwrap(),
                 });
             } else if KEY_VALUE_REGEX.is_match(line) {
                 let groups = KEY_VALUE_REGEX.captures(line).unwrap();
-                let key = groups[1].to_string();
-                let value = groups[2].to_string();
+                let key = String::from(groups[1].to_string().trim());
+                let value = String::from(groups[2].to_string().trim());
 
                 if key == "url" {
                     currRemote.as_mut().unwrap().url = value;
@@ -114,75 +117,111 @@ impl Git {
     }
 
     pub fn stageFiles(&self, paths: &Vec<String>) -> () {
-        let result = exec(Command::new("git").arg("add").args(paths));
+        if paths.len() == 0 {
+            let result = getUnstagedFiles();
+
+            match result {
+                Ok(files) => {
+                    let result = exec(Command::new("git").arg("add").args(files));
+
+                    match result {
+                        Ok(output) => println!("{}", output),
+                        Err(error) => eprintln!("{}", error.bg_red()),
+                    };
+                }
+                Err(error) => eprintln!("{}", error.bg_red()),
+            }
+        } else {
+            let result = exec(Command::new("git").arg("add").args(paths));
+
+            match result {
+                Ok(output) => println!("{}", output),
+                Err(error) => eprintln!("{}", error.bg_red()),
+            };
+        }
+    }
+
+    pub fn unstageFiles(&self, paths: &Vec<String>) -> () {
+        let result = exec(Command::new("git").arg("reset").args(paths));
 
         match result {
             Ok(output) => println!("{}", output),
             Err(error) => eprintln!("{}", error.bg_red()),
         };
     }
-}
 
-pub fn unstageFiles(paths: &Vec<String>) -> () {
-    let result = exec(Command::new("git").arg("reset").args(paths));
+    pub fn commit(&self, message: &Vec<String>, ammend: &bool) -> () {
+        let mut cmd = Command::new("git");
 
-    match result {
-        Ok(output) => println!("{}", output),
-        Err(error) => eprintln!("{}", error.bg_red()),
-    };
-}
+        cmd.arg("commit")
+            .arg("-m")
+            .arg(format!("\"{}\"", message.join(" ")));
 
-pub fn commit(message: &Vec<String>, ammend: &bool) -> () {
-    let mut cmd = Command::new("git");
+        if *ammend {
+            cmd.arg("--amend");
+        }
 
-    cmd.arg("commit")
-        .arg("-m")
-        .arg(format!("\"{}\"", message.join(" ")));
+        let result = exec(&mut cmd);
 
-    if *ammend {
-        cmd.arg("--amend");
+        match result {
+            Ok(output) => println!("{}", output),
+            Err(error) => eprintln!("{}", error.bg_red()),
+        };
     }
 
-    let result = exec(&mut cmd);
+    pub fn link(&self, remote: &String, name: &Option<String>) -> () {
+        let mut cmd = Command::new("git");
 
-    match result {
-        Ok(output) => println!("{}", output),
-        Err(error) => eprintln!("{}", error.bg_red()),
-    };
+        cmd.arg("remote")
+            .arg("add")
+            .arg(name.as_ref().unwrap_or(&String::from("origin")))
+            .arg(remote);
+
+        let result = exec(&mut cmd);
+
+        match result {
+            Ok(output) => println!("{}", output),
+            Err(error) => eprintln!("{}", error.bg_red()),
+        };
+    }
+
+    pub fn push(&self, remoteName: &Option<String>) -> () {
+        let mut cmd = Command::new("git");
+
+        cmd.arg("push")
+            .arg(remoteName.as_ref().unwrap_or(&String::from("origin")))
+            .arg(getCurrentBranchName().unwrap());
+
+        if !self.getCurrentBranch().unwrap().remote.is_some() {
+            cmd.arg("-u");
+        }
+
+        let result = exec(&mut cmd);
+
+        match result {
+            Ok(output) => println!("{}", output),
+            Err(error) => eprintln!("{}", error.bg_red()),
+        };
+    }
+
+    fn getCurrentBranch(&self) -> Result<&Branch, String> {
+        for branch in self.config.branches.as_slice() {
+            if branch.current {
+                return Ok(branch);
+            }
+        }
+
+        return Err(String::from("Could not find current branch"));
+    }
 }
 
-pub fn link(remote: &String, name: &Option<String>) -> () {
-    let mut cmd = Command::new("git");
-
-    cmd.arg("remote")
-        .arg("add")
-        .arg(name.as_ref().unwrap_or(&String::from("origin")))
-        .arg(remote);
-
-    let result = exec(&mut cmd);
-
-    match result {
-        Ok(output) => println!("{}", output),
-        Err(error) => eprintln!("{}", error.bg_red()),
-    };
-}
-
-pub fn push(remoteName: &Option<String>) -> () {
-    let mut cmd = Command::new("git");
-
-    cmd.arg("push")
-        .arg("-u")
-        .arg(remoteName.as_ref().unwrap_or(&String::from("origin")))
-        .arg(getCurrentBranch().unwrap());
-
-    let result = exec(&mut cmd);
-
-    match result {
-        Ok(output) => println!("{}", output),
-        Err(error) => eprintln!("{}", error.bg_red()),
-    };
-}
-
-fn getCurrentBranch() -> Result<String, String> {
+fn getCurrentBranchName() -> Result<String, String> {
     return exec(Command::new("git").arg("branch").arg("--show-current"));
+}
+
+fn getUnstagedFiles() -> Result<Vec<String>, String> {
+    return Ok(exec(Command::new("git").arg("status").arg("--porcelain"))?
+        .lines()
+        .map(|line| line.trim()[1..].trim().to_string())
+        .collect::<Vec<String>>());
 }
