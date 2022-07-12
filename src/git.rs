@@ -158,9 +158,7 @@ impl Git {
     pub fn commit(&self, message: &Vec<String>, ammend: &bool) -> () {
         let mut cmd = Command::new("git");
 
-        cmd.arg("commit")
-            .arg("-m")
-            .arg(format!("\"{}\"", message.join(" ")));
+        cmd.arg("commit").arg("-m").arg(message.join(" "));
 
         if *ammend {
             cmd.arg("--amend");
