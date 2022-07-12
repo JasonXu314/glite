@@ -51,6 +51,19 @@ enum Commands {
         #[clap(value_parser)]
         remoteName: Option<String>,
     },
+    #[clap(about = "Manipulates branches")]
+    Branch {
+        #[clap(value_parser)]
+        name: String,
+
+        #[clap(short, long)]
+        checkout: bool,
+    },
+    #[clap(about = "Checks out the given branch")]
+    Checkout {
+        #[clap(value_parser)]
+        name: String,
+    },
 }
 
 fn main() {
@@ -64,5 +77,7 @@ fn main() {
         Commands::Commit { message, ammend } => git.commit(message, ammend),
         Commands::Link { remoteUrl, name } => git.link(remoteUrl, name),
         Commands::Push { remoteName } => git.push(remoteName),
+        Commands::Branch { name, checkout } => git.branch(name, checkout),
+        Commands::Checkout { name } => git.checkout(name),
     }
 }
