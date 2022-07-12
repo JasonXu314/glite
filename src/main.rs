@@ -5,7 +5,7 @@ mod utils;
 
 use clap::{Parser, Subcommand};
 
-use git::{commit, link, push, stageFiles, unstageFiles};
+use git::{commit, link, push, unstageFiles, Git};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, propagate_version = true, about)]
@@ -55,10 +55,11 @@ enum Commands {
 
 fn main() {
     let args: Args = Args::parse();
+    let git = Git::new().unwrap();
 
     match &args.command {
         Commands::Init {} => println!("git init"),
-        Commands::Stage { paths } => stageFiles(paths),
+        Commands::Stage { paths } => git.stageFiles(paths),
         Commands::Unstage { paths } => unstageFiles(paths),
         Commands::Commit { message, ammend } => commit(message, ammend),
         Commands::Link { remoteUrl, name } => link(remoteUrl, name),
