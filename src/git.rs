@@ -200,13 +200,14 @@ impl Git {
 
         match result {
             Ok(_) => println!(
-                "Pushed to {}",
+                "{} {}",
+                "Pushed to".green(),
                 format!(
                     "{}/{}",
                     remoteName.as_ref().unwrap_or(&String::from("origin")),
                     getCurrentBranchName().unwrap()
                 )
-                .green()
+                .blue()
             ),
             Err(error) => eprintln!("{}", error.bg_red()),
         };
