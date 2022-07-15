@@ -73,7 +73,7 @@ fn main() {
     let git = Git::new().unwrap();
 
     match &args.command {
-        Commands::Init {} => println!("git init"),
+        Commands::Init {} => git.init(),
         Commands::Stage { paths } => git.stageFiles(paths),
         Commands::Unstage { paths } => git.unstageFiles(paths),
         Commands::Commit { message, ammend } => git.commit(message, ammend),

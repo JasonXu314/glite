@@ -116,6 +116,15 @@ impl Git {
         return Ok(Git { config });
     }
 
+    pub fn init(&self) -> () {
+        let result = exec(Command::new("git").arg("init"));
+
+        match result {
+            Ok(output) => println!("{}", output),
+            Err(error) => eprintln!("{}", error.bg_red()),
+        };
+    }
+
     pub fn stageFiles(&self, paths: &Vec<String>) -> () {
         let mut files: Vec<String> = Vec::new();
 
