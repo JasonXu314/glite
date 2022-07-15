@@ -226,16 +226,16 @@ impl Git {
     }
 
     pub fn branch(&self, name: &String, checkout: &bool) -> () {
-        let result = exec(
-            Command::new("git")
-                .arg("branch")
-                .arg(name.as_str())
-                .arg("-t"),
-        );
+        let result = exec(Command::new("git").arg("branch").arg(name.as_str()));
 
         match result {
             Ok(_) => {
                 println!("{} {}", "Created branch".green(), name.as_str().cyan());
+
+                self.checkout(name);
+                self.push(&Some(String::from("origin")));
+                self.checkout(&String::from("master"));
+
                 if *checkout {
                     self.checkout(name);
                 }
